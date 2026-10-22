@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>ChzzkDonationFix</AssemblyName>
+    <RootNamespace>ChzzkDonationFix</RootNamespace>
+    <Product>치지직 영상도네이션 멈춤 방지</Product>
+    <AssemblyTitle>치지직 영상도네이션 멈춤 방지</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <GenerateAppConfig>false</GenerateAppConfig>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
+  </ItemGroup>
+
+</Project>
