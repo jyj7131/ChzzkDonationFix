@@ -22,8 +22,6 @@ namespace ChzzkDonationFix
         [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern int sqlite3_bind_blob(IntPtr stmt, int i, byte[] v, int n, IntPtr destructor);
         [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern long sqlite3_column_int64(IntPtr stmt, int i);
         [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern IntPtr sqlite3_column_text16(IntPtr stmt, int i);
-        [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern IntPtr sqlite3_column_blob(IntPtr stmt, int i);
-        [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern int sqlite3_column_bytes(IntPtr stmt, int i);
         [DllImport(Dll, CallingConvention = CallingConvention.StdCall)] static extern IntPtr sqlite3_errmsg16(IntPtr db);
 
         static readonly IntPtr Transient = new IntPtr(-1);
@@ -73,13 +71,6 @@ namespace ChzzkDonationFix
             public Row(IntPtr st) { this.st = st; }
             public long Long(int i) => sqlite3_column_int64(st, i);
             public string Text(int i) => Marshal.PtrToStringUni(sqlite3_column_text16(st, i));
-            public byte[] Blob(int i)
-            {
-                int n = sqlite3_column_bytes(st, i);
-                var b = new byte[n];
-                if (n > 0) Marshal.Copy(sqlite3_column_blob(st, i), b, 0, n);
-                return b;
-            }
         }
 
         public void Dispose()
@@ -97,7 +88,6 @@ namespace ChzzkDonationFix
         [DllImport(Dll, CharSet = CharSet.Unicode)] static extern int BCryptSetProperty(IntPtr h, string prop, byte[] input, int size, int flags);
         [DllImport(Dll)] static extern int BCryptGenerateSymmetricKey(IntPtr alg, out IntPtr key, IntPtr keyObj, int keyObjSize, byte[] secret, int secretSize, int flags);
         [DllImport(Dll)] static extern int BCryptEncrypt(IntPtr key, byte[] input, int inputSize, ref AuthInfo pad, byte[] iv, int ivSize, byte[] output, int outputSize, out int result, int flags);
-        [DllImport(Dll)] static extern int BCryptDecrypt(IntPtr key, byte[] input, int inputSize, ref AuthInfo pad, byte[] iv, int ivSize, byte[] output, int outputSize, out int result, int flags);
         [DllImport(Dll)] static extern int BCryptDestroyKey(IntPtr key);
         [DllImport(Dll)] static extern int BCryptCloseAlgorithmProvider(IntPtr alg, int flags);
 
@@ -141,26 +131,6 @@ namespace ChzzkDonationFix
             Buffer.BlockCopy(cipher, 0, result, 0, cipher.Length);
             Buffer.BlockCopy(tag, 0, result, cipher.Length, 16);
             return result;
-        });
-
-        // 입력: 암호문 + 태그. 태그가 안 맞으면 null
-        public static byte[] Decrypt(byte[] key, byte[] nonce, byte[] cipherAndTag) => WithKey(key, hKey =>
-        {
-            int n = cipherAndTag.Length - 16;
-            if (n < 0) return null;
-            var cipher = new byte[n];
-            var tag = new byte[16];
-            Buffer.BlockCopy(cipherAndTag, 0, cipher, 0, n);
-            Buffer.BlockCopy(cipherAndTag, n, tag, 0, 16);
-            var plain = new byte[n];
-            var hn = GCHandle.Alloc(nonce, GCHandleType.Pinned);
-            var ht = GCHandle.Alloc(tag, GCHandleType.Pinned);
-            try
-            {
-                var info = NewInfo(hn, nonce.Length, ht);
-                return BCryptDecrypt(hKey, cipher, n, ref info, null, 0, plain, n, out _, 0) == 0 ? plain : null;
-            }
-            finally { hn.Free(); ht.Free(); }
         });
 
         static AuthInfo NewInfo(GCHandle nonce, int nonceLen, GCHandle tag) => new AuthInfo

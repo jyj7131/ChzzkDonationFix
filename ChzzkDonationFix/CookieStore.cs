@@ -64,8 +64,6 @@ namespace ChzzkDonationFix
                 if (schema != SupportedSchema)
                     throw new NotSupportedException($"XSplit 쿠키 파일 형식(버전 {schema})이 예상과 달라요.");
 
-                VerifyKey(db, key);
-
                 long now = ChromeTime(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 db.Exec("BEGIN");
                 try
@@ -102,7 +100,11 @@ namespace ChzzkDonationFix
             var b64 = ((Dictionary<string, object>)prefs["os_crypt"])["encrypted_key"] as string;
             var raw = Convert.FromBase64String(b64);
             if (Encoding.ASCII.GetString(raw, 0, 5) != "DPAPI") throw new NotSupportedException("암호 키 형식이 예상과 달라요.");
-            return ProtectedData.Unprotect(raw.Skip(5).ToArray(), null, DataProtectionScope.CurrentUser);
+            // 윈도우 보호가 정상적으로 풀렸고 AES-256 키 길이(32바이트)면 올바른 키로 본다.
+            // 기존 쿠키를 복호화해서 확인하지 않는다 (다른 쿠키 내용은 보지 않기 위해).
+            var key = ProtectedData.Unprotect(raw.Skip(5).ToArray(), null, DataProtectionScope.CurrentUser);
+            if (key.Length != 32) throw new NotSupportedException("암호 키 형식이 예상과 달라요.");
+            return key;
         }
 
         static byte[] Encrypt(byte[] key, string value)
@@ -111,18 +113,6 @@ namespace ChzzkDonationFix
             using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(nonce);
             var body = AesGcm.Encrypt(key, nonce, Encoding.UTF8.GetBytes(value));
             return Encoding.ASCII.GetBytes("v10").Concat(nonce).Concat(body).ToArray();
-        }
-
-        // 기존 쿠키 하나를 풀어봐서 키가 맞는지 확인한다 (틀린 키로 쓰면 XSplit이 못 읽는 쿠키가 된다)
-        static void VerifyKey(Sqlite db, byte[] key)
-        {
-            byte[] sample = null;
-            db.Query("SELECT encrypted_value FROM cookies WHERE length(encrypted_value) > 31 LIMIT 1", new object[0], r => sample = r.Blob(0));
-            if (sample == null) return; // 비교할 쿠키가 없으면 넘어간다
-            if (Encoding.ASCII.GetString(sample, 0, 3) != "v10") throw new NotSupportedException("쿠키 암호화 형식이 예상과 달라요.");
-            var nonce = sample.Skip(3).Take(12).ToArray();
-            if (AesGcm.Decrypt(key, nonce, sample.Skip(15).ToArray()) == null)
-                throw new Exception("XSplit 쿠키 암호 키를 확인하지 못했어요.");
         }
     }
 }
