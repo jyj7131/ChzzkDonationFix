@@ -9,8 +9,21 @@
     <RootNamespace>ChzzkDonationFix</RootNamespace>
     <Product>치지직 영상도네이션 멈춤 방지</Product>
     <AssemblyTitle>치지직 영상도네이션 멈춤 방지</AssemblyTitle>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <GenerateAppConfig>false</GenerateAppConfig>
+
+    <!-- 실행 파일 속성(자세히 탭)에 표시되는 정보 -->
+    <Company>jyj7131</Company>
+    <Authors>jyj7131</Authors>
+    <Copyright>Copyright © 2026 jyj7131</Copyright>
+    <Description>XSplit에서 치지직 영상도네이션이 '너무 많은 기기' 오류로 멈추는 문제를 해결하는 런처</Description>
+    <PackageProjectUrl>https://github.com/jyj7131/ChzzkDonationFix</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jyj7131/ChzzkDonationFix</RepositoryUrl>
+    <NeutralLanguage>ko-KR</NeutralLanguage>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <ApplicationIcon>fix.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
