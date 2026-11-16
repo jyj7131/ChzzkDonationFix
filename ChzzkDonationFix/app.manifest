@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
-  <assemblyIdentity version="1.0.2.0" name="ChzzkDonationFix.app" type="win32" />
+  <assemblyIdentity version="1.0.3.0" name="ChzzkDonationFix.app" type="win32" />
   <description>XSplit 치지직 영상도네이션 중복 재생 오류 해결 런처</description>
 
   <!-- 관리자 권한이 필요 없다. (XSplit 자체가 요구하는 권한 확인은 XSplit을 실행할 때 따로 뜬다) -->

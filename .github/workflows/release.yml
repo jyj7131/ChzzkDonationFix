@@ -1,0 +1,83 @@
+# 태그(v*)를 올리면 깃허브 서버가 그 커밋의 소스로 exe를 빌드하고,
+# SHA-256 값과 빌드 출처 증명(attestation)을 붙여 릴리즈 초안을 만든다.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write      # 릴리즈 생성
+  id-token: write      # 출처 증명 서명
+  attestations: write  # 출처 증명 기록
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 빌드
+        shell: pwsh
+        run: dotnet build ChzzkDonationFix/ChzzkDonationFix.csproj -c Release -p:ContinuousIntegrationBuild=true
+
+      - name: SHA-256 계산
+        id: hash
+        shell: pwsh
+        run: |
+          $exe = 'ChzzkDonationFix/bin/Release/net48/ChzzkDonationFix.exe'
+          Copy-Item $exe ChzzkDonationFix.exe
+          $sha = (Get-FileHash ChzzkDonationFix.exe -Algorithm SHA256).Hash.ToLower()
+          "$sha  ChzzkDonationFix.exe" | Out-File -Encoding ascii ChzzkDonationFix.exe.sha256
+          "sha=$sha" >> $env:GITHUB_OUTPUT
+
+      - name: 출처 증명
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ChzzkDonationFix.exe
+
+      - name: 릴리즈 초안 생성
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $repo = '${{ github.repository }}'
+          $run = "${{ github.server_url }}/$repo/actions/runs/${{ github.run_id }}"
+          $commit = '${{ github.sha }}'
+          $sha = '${{ steps.hash.outputs.sha }}'
+          $notes = @"
+          ## 빌드 정보
+
+          이 파일은 깃허브 서버(GitHub Actions)가 공개된 소스로 직접 빌드했습니다. 제작자 PC에서 빌드한 파일이 아닙니다.
+
+          - SHA-256: ``$sha``
+          - 소스 커밋: [$($commit.Substring(0,7))](https://github.com/$repo/tree/$commit)
+          - 빌드 기록: $run
+          - 빌드 설정: [.github/workflows/release.yml](https://github.com/$repo/blob/$commit/.github/workflows/release.yml)
+
+          받은 파일이 이 빌드 결과물과 같은지 확인하는 방법
+
+          - PowerShell: ``Get-FileHash ChzzkDonationFix.exe`` → 위 SHA-256과 비교
+          - GitHub CLI: ``gh attestation verify ChzzkDonationFix.exe -R $repo`` → 이 저장소의 위 커밋에서 빌드된 파일인지 깃허브 서명으로 확인
+
+          ## 사용 방법
+
+          1. 아래 ``ChzzkDonationFix.exe``를 받아서 지우지 않을 곳(바탕화면 등)에 둡니다.
+          2. XSplit을 켤 때 기존 바로가기 대신 이 파일로 켭니다.
+
+          이 파일 하나만 있으면 되고, 설치나 XSplit 개발자 모드 설정은 필요 없습니다.
+
+          - 처음 실행할 때 "Windows의 PC 보호" 경고가 뜨면 [추가 정보] → [실행]을 누르세요.
+          - XSplit이 켜져 있을 때 실행하면 설정이 필요한 경우 XSplit을 끄고 다시 실행하라는 안내가 나옵니다.
+          - 요구 사항: Windows 10 이상
+
+          원인과 동작 방식은 [README](https://github.com/$repo#readme)를 참고하세요.
+          "@
+          $notes = ($notes -split "`n" | ForEach-Object { $_ -replace '^          ', '' }) -join "`n"
+          $notes | Out-File -Encoding utf8 notes.md
+          gh release create $tag ChzzkDonationFix.exe ChzzkDonationFix.exe.sha256 --draft --title $tag --notes-file notes.md

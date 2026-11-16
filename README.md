@@ -123,6 +123,20 @@ dotnet build -c Release
 
 요구 사항: Windows 10 이상, .NET Framework 4.8 (Windows 10 1903 이후 기본 포함)
 
+### 릴리즈 파일의 빌드 출처
+
+v1.0.3부터 릴리즈의 exe는 개인 PC가 아니라 GitHub Actions가 태그 시점의 소스로 직접 빌드한다 ([.github/workflows/release.yml](.github/workflows/release.yml)).
+각 릴리즈에는 SHA-256 값, 소스 커밋, 빌드 기록 링크가 함께 적히고, 빌드 출처 증명(attestation)이 기록된다.
+
+받은 파일이 이 저장소의 해당 커밋에서 빌드된 것인지 확인하는 방법:
+
+```bash
+gh attestation verify ChzzkDonationFix.exe -R jyj7131/ChzzkDonationFix
+```
+
+SHA-256만 비교하려면 PowerShell에서 `Get-FileHash ChzzkDonationFix.exe` 결과를 릴리즈에 적힌 값과 비교한다.
+v1.0.2 이하는 개인 PC에서 빌드한 파일이다.
+
 ## 사용
 
 XSplit 바로가기 대신 `ChzzkDonationFix.exe`로 XSplit을 실행한다.

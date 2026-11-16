@@ -9,7 +9,7 @@
     <RootNamespace>ChzzkDonationFix</RootNamespace>
     <Product>치지직 영상도네이션 멈춤 방지</Product>
     <AssemblyTitle>치지직 영상도네이션 멈춤 방지</AssemblyTitle>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <GenerateAppConfig>false</GenerateAppConfig>
 
     <!-- 실행 파일 속성(자세히 탭)에 표시되는 정보 -->
